@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="LUMIÈRE"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0b2a5b">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png">
+<title>LUMIÈRE</title>
+<style>
+:root{--bg:#fff;--card:#eef5fc;--ink:#0b2a5b;--mute:#5a6f8f;--acc:#1e5fb3;--soft:#cfe3f7;--line:#d5e3f3;--warn:#fff4d6;--warnink:#6b4e00;--sans:-apple-system,"SF Pro Text",system-ui,sans-serif;--serif:"Iowan Old Style","Palatino Linotype",Georgia,serif}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#07142b;--card:#0e2347;--ink:#e8f1fc;--mute:#9fb6d6;--acc:#7fb8f0;--soft:#17386b;--line:#1b3866;--warn:#3a2f0a;--warnink:#ffe29a}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+main{flex:1;overflow-y:auto;padding:16px 16px 24px;max-width:640px;width:100%;margin:0 auto}
+h1{font:600 26px/1.2 var(--serif);margin:4px 0 12px}h2{font:600 18px/1.3 var(--serif);margin:20px 0 8px}
+.card{background:var(--card);border-radius:16px;padding:14px 16px;margin:10px 0}
+.demo{background:var(--warn);color:var(--warnink);border-radius:12px;padding:8px 12px;font-size:13px;margin:10px 0}
+.mute{color:var(--mute);font-size:14px}
+button,.btn{font:inherit;border:0;border-radius:12px;padding:10px 14px;background:var(--acc);color:#fff;cursor:pointer}
+button.ghost{background:var(--soft);color:var(--ink)}
+input,textarea{font:inherit;width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg);color:var(--ink)}
+textarea{min-height:90px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid button{padding:14px 10px}
+.list button.row{display:block;width:100%;text-align:left;background:none;color:var(--ink);border-bottom:1px solid var(--line);border-radius:0;padding:12px 4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chips button{padding:8px 14px}
+.chips button.on{background:var(--acc);color:#fff}
+.verse{font:19px/1.7 var(--serif);padding:6px 8px;border-radius:10px}.verse sup{color:var(--acc);font:600 12px var(--sans);margin-right:6px}
+.verse.sel{background:var(--soft)}.verse .st{color:var(--acc)}
+.bar{height:8px;border-radius:8px;background:var(--soft);overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
+.dots{display:flex;gap:6px}.dots i{width:14px;height:14px;border-radius:50%;background:var(--soft)}.dots i.on{background:var(--acc)}
+.sheet{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:10px 0;display:flex;gap:8px;flex-wrap:wrap}
+nav{display:flex;border-top:1px solid var(--line);background:var(--bg);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;background:none;color:var(--mute);border-radius:0;padding:8px 2px 6px;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button.on{color:var(--acc);font-weight:600}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+</style></head><body>
+<main id="app"></main>
+<nav id="nav"></nav>
+<script>
+const AT=["Genèse","Exode","Lévitique","Nombres","Deutéronome","Josué","Juges","Ruth","1 Samuel","2 Samuel","1 Rois","2 Rois","1 Chroniques","2 Chroniques","Esdras","Néhémie","Tobie","Judith","Esther","1 Maccabées","2 Maccabées","Job","Psaumes","Proverbes","Qohélet","Cantique des Cantiques","Sagesse","Siracide","Isaïe","Jérémie","Lamentations","Baruch","Ézéchiel","Daniel","Osée","Joël","Amos","Abdias","Jonas","Michée","Nahum","Habacuc","Sophonie","Aggée","Zacharie","Malachie"];
+const NT=["Matthieu","Marc","Luc","Jean","Actes des Apôtres","Romains","1 Corinthiens","2 Corinthiens","Galates","Éphésiens","Philippiens","Colossiens","1 Thessaloniciens","2 Thessaloniciens","1 Timothée","2 Timothée","Tite","Philémon","Hébreux","Jacques","1 Pierre","2 Pierre","1 Jean","2 Jean","3 Jean","Jude","Apocalypse"];
+const BOOKS=[...AT,...NT];
+// DÉMO : 2 chapitres × 5 versets factices par livre. Remplacé par le vrai texte à l’étape 3.
+const DEMO_CH=2,DEMO_V=5;
+const demoVerse=(b,c,v)=>`[DÉMO] Emplacement du verset ${v} — ce n’est pas le texte biblique.`;
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const L={get:(k,d)=>{try{return JSON.parse(localStorage.getItem('lum_'+k))??d}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem('lum_'+k,JSON.stringify(v))}catch(e){alert('Stockage impossible sur cet appareil.')}}};
+const id=(b,c,v)=>`${b}.${c}.${v}`,ref=i=>{const[b,c,v]=i.split('.');return`${BOOKS[b]} ${c},${v}`};
+const today=()=>new Date().toISOString().slice(0,10);
+const S={tab:'home',book:null,ch:1,sel:null,sp:'fav',q:'',cat:0};
+const ICON={home:'<path d="M3 11l9-8 9 8M5 10v10h14V10"/>',bible:'<path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3zM9 8h6"/>',search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',pray:'<path d="M12 3c2 3 5 4 5 8a5 5 0 01-10 0c0-4 3-5 5-8zM12 16v5"/>',me:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>'};
+const TABS=[['home','Accueil'],['bible','Bible'],['search','Recherche'],['pray','Prières'],['me','Mon espace']];
+const CATS=["Prière du matin","Prière du soir","Prière pour sa famille","Prière pour son enfant","Prière dans les difficultés","Prière pour demander pardon","Prière de gratitude","Prière pour retrouver la paix","Prière pour les personnes malades","Prière avant de prendre une décision"];
+const DEMO='<div class="demo"><b>Mode démonstration.</b> Les textes bibliques affichés sont des emplacements factices, pas la vraie Bible. Le texte authentique sera intégré à l’étape 3.</div>';
+function markRead(){const r=L.get('days',[]);if(!r.includes(today())){r.push(today());L.set('days',r)}}
+function go(t){S.tab=t;S.sel=null;render()}
+function render(){
+ $('#nav').innerHTML=TABS.map(([k,n])=>`<button class="${S.tab===k?'on':''}" onclick="go('${k}')" aria-label="${n}"><svg viewBox="0 0 24 24">${ICON[k==='me'?'me':k]}</svg>${n}</button>`).join('');
+ $('#app').innerHTML=({home,bible,search,pray,me})[S.tab]();$('#app').scrollTop=0}
+function home(){
+ const d=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),seen=Object.keys(L.get('seen',{})).length,last=L.get('last',null);
+ return`<h1>Bienvenue sur LUMIÈRE</h1><p class="mute">${d}</p>${DEMO}
+ <div class="card"><h2 style="margin-top:0">Évangile du jour</h2><p class="mute">Rubrique à venir (étape 8) : référence, texte intégral et espace pour vos notes. Aucune lecture n’est affichée tant que le calendrier liturgique n’est pas intégré et vérifié.</p></div>
+ <div class="card"><h2 style="margin-top:0">Un verset à méditer</h2><p class="mute">Disponible dès que le vrai texte biblique sera intégré.</p></div>
+ <h2>Accès rapides</h2><div class="grid">
+ <button onclick="${last?`openCh(${last.b},${last.c})`:`go('bible')`}">${last?'Reprendre ma lecture':'Ouvrir la Bible'}</button>
+ <button class="ghost" onclick="go('search')">Rechercher</button><button class="ghost" onclick="go('pray')">Prières</button><button class="ghost" onclick="go('me')">Mon espace</button></div>
+ <h2>Ma progression</h2><div class="card"><div class="bar"><i style="width:${Math.min(100,seen)}%"></i></div><p class="mute" style="margin-bottom:0">${seen} chapitre(s) ouvert(s) (démo)</p></div>`}
+function bible(){
+ if(S.book===null)return`<h1>La Bible</h1>${DEMO}<h2>Ancien Testament (46)</h2><div class="list">${AT.map((n,i)=>`<button class="row" onclick="openCh(${i},1)">${esc(n)}</button>`).join('')}</div><h2>Nouveau Testament (27)</h2><div class="list">${NT.map((n,i)=>`<button class="row" onclick="openCh(${i+46},1)">${esc(n)}</button>`).join('')}</div>
+ <p class="mute">Texte prévu : Sainte Bible néo-Crampon Libre, licence CC BY-SA 4.0. Crédits complets à afficher lors de l’intégration.</p>`;
+ const b=S.book,c=S.ch,fav=L.get('fav',[]),notes=L.get('notes',{});
+ let v='';for(let i=1;i<=DEMO_V;i++){const k=id(b,c,i);v+=`<div class="verse ${S.sel===k?'sel':''}" onclick="selV('${k}')"><sup>${i}</sup>${demoVerse(b,c,i)} ${fav.includes(k)?'<span class="st">★</span>':''}${notes[k]?'<span class="st"> ✎</span>':''}</div>`}
+ return`<button class="ghost" onclick="S.book=null;render()">‹ Livres</button><h1>${esc(BOOKS[b])} ${c}</h1>${DEMO}
+ <div class="chips">${Array.from({length:DEMO_CH},(_,i)=>`<button class="${i+1===c?'on':''}" onclick="openCh(${b},${i+1})">${i+1}</button>`).join('')}</div>${v}
+ <div class="sheet">${S.sel?`<span class="mute" style="width:100%">${esc(ref(S.sel))}</span><button onclick="togFav()">${fav.includes(S.sel)?'Retirer des favoris':'Favori'}</button><button class="ghost" onclick="copyV()">Copier</button><button class="ghost" onclick="shareV()">Partager</button><button class="ghost" onclick="noteV()">Note</button>`:'<span class="mute">Touchez un verset pour agir dessus.</span>'}</div>
+ <div class="sheet" style="border:0"><button class="ghost" ${c>1?'':'disabled'} onclick="openCh(${b},${c-1})">‹ Précédent</button><button class="ghost" ${c<DEMO_CH?'':'disabled'} onclick="openCh(${b},${c+1})">Suivant ›</button></div>`}
+function openCh(b,c){S.tab='bible';S.book=b;S.ch=c;S.sel=null;L.set('last',{b,c});const s=L.get('seen',{});s[b+'.'+c]=1;L.set('seen',s);markRead();render()}
+function selV(k){S.sel=S.sel===k?null:k;const y=$('#app').scrollTop;render();$('#app').scrollTop=y}
+function togFav(){let f=L.get('fav',[]);f=f.includes(S.sel)?f.filter(x=>x!==S.sel):[...f,S.sel];L.set('fav',f);selV(S.sel);selV(S.sel)}
+function vtxt(k){const[b,c,v]=k.split('.');return`${demoVerse(b,c,v)} (${ref(k)})`}
+function copyV(){navigator.clipboard?.writeText(vtxt(S.sel)).then(()=>alert('Verset copié.'),()=>alert('Copie impossible.'))}
+function shareV(){navigator.share?navigator.share({text:vtxt(S.sel)}).catch(()=>{}):copyV()}
+function noteV(){const n=L.get('notes',{}),t=prompt('Votre note pour '+ref(S.sel),n[S.sel]||'');if(t!==null){if(t.trim())n[S.sel]=t.trim();else delete n[S.sel];L.set('notes',n);selV(S.sel);selV(S.sel)}}
+function search(){
+ const q=S.q.trim().toLowerCase();let out='';
+ if(q.length>1){const bk=BOOKS.map((n,i)=>[n,i]).filter(([n])=>n.toLowerCase().includes(q));
+  out=bk.length?`<h2>Livres</h2><div class="list">${bk.map(([n,i])=>`<button class="row" onclick="openCh(${i},1)">${esc(n)}</button>`).join('')}</div>`:'';
+  out+=`<div class="card"><b>Recherche thématique</b><p class="mute" style="margin-bottom:0">Les passages liés à votre question (références exactes, textes, thèmes proches) arriveront à l’étape 5, à partir du texte biblique réel. Aucun résultat n’est inventé en attendant.</p></div>`}
+ return`<h1>Recherche</h1>${DEMO}<input id="q" type="search" placeholder="Un mot, un livre ou une question…" value="${esc(S.q)}" oninput="S.q=this.value;clearTimeout(window.t);window.t=setTimeout(()=>{render();const e=$('#q');e.focus();e.setSelectionRange(99,99)},350)">${out}
+ <h2>Exemples de questions prévues</h2><p class="mute">Comment apprendre à pardonner ? · Comment prier ? · Que dit Jésus sur l’amour ? · Comment retrouver l’espérance ?</p>`}
+function pray(){
+ const mine=L.get('prayers',[]);
+ return`<h1>Prières</h1><div class="demo"><b>Bibliothèque à venir (étape 6).</b> Les prières traditionnelles et originales seront ajoutées avec leur source. Vous pouvez déjà écrire les vôtres.</div>
+ <div class="chips">${CATS.map((c,i)=>`<button class="${S.cat===i?'on':''}" onclick="S.cat=${i};render()">${c.replace('Prière ','')}</button>`).join('')}</div>
+ <h2>${CATS[S.cat]}</h2>${mine.map((p,i)=>p.c===S.cat?`<div class="card"><b>${esc(p.t)}</b><p style="white-space:pre-wrap">${esc(p.x)}</p><button class="ghost" onclick="delP(${i})">Supprimer</button></div>`:'').join('')||'<p class="mute">Aucune prière dans cette catégorie pour l’instant.</p>'}
+ <div class="card"><b>Ajouter ma prière</b><input id="pt" placeholder="Titre" style="margin:8px 0"><textarea id="px" placeholder="Mon texte…"></textarea><button style="margin-top:8px" onclick="addP()">Enregistrer</button></div>`}
+function addP(){const t=$('#pt').value.trim(),x=$('#px').value.trim();if(!x)return alert('Écrivez le texte de votre prière.');const p=L.get('prayers',[]);p.push({c:S.cat,t:t||'Ma prière',x});L.set('prayers',p);render()}
+function delP(i){if(confirm('Supprimer cette prière ?')){const p=L.get('prayers',[]);p.splice(i,1);L.set('prayers',p);render()}}
+function me(){
+ const sub=[['fav','Favoris'],['notes','Notes'],['jour','Journal'],['prog','Progression']];
+ let b='';
+ if(S.sp==='fav'){const f=L.get('fav',[]);b=f.length?`<div class="list">${f.map(k=>{const[x,c]=k.split('.');return`<button class="row" onclick="openCh(${x},${c})"><b>${esc(ref(k))}</b><br><span class="mute">${esc(demoVerse(...k.split('.')))}</span></button>`}).join('')}</div>`:'<p class="mute">Aucun favori. Dans la Bible, touchez un verset puis « Favori ».</p>'}
+ if(S.sp==='notes'){const n=Object.entries(L.get('notes',{}));b=n.length?n.map(([k,t])=>`<div class="card"><b>${esc(ref(k))}</b><p style="white-space:pre-wrap;margin:4px 0 0">${esc(t)}</p></div>`).join(''):'<p class="mute">Aucune note. Dans la Bible, touchez un verset puis « Note ».</p>'}
+ if(S.sp==='jour'){const j=L.get('journal',[]);b=`<div class="card"><textarea id="jt" placeholder="Ce que cette journée m’inspire…"></textarea><button style="margin-top:8px" onclick="addJ()">Ajouter au journal</button></div>`+[...j].reverse().map((e,i)=>`<div class="card"><span class="mute">${esc(e.d)}</span><p style="white-space:pre-wrap;margin:4px 0 8px">${esc(e.t)}</p><button class="ghost" onclick="delJ(${j.length-1-i})">Supprimer</button></div>`).join('')}
+ if(S.sp==='prog'){const d=L.get('days',[]),dots=[];for(let i=13;i>=0;i--){const x=new Date();x.setDate(x.getDate()-i);dots.push(d.includes(x.toISOString().slice(0,10)))}
+  b=`<div class="card"><b>14 derniers jours</b><div class="dots" style="margin-top:8px">${dots.map(o=>`<i class="${o?'on':''}"></i>`).join('')}</div><p class="mute" style="margin-bottom:0">${d.length} jour(s) de lecture au total</p></div><p class="mute">Objectifs de lecture : à venir (étape 7).</p>`}
+ return`<h1>Mon espace</h1><div class="chips">${sub.map(([k,n])=>`<button class="${S.sp===k?'on':''}" onclick="S.sp='${k}';render()">${n}</button>`).join('')}</div><div style="margin-top:12px">${b}</div>
+ <h2>Sauvegarde</h2><p class="mute">Tout reste sur votre iPhone. Exportez régulièrement vos données.</p><button class="ghost" onclick="exportD()">Exporter mes données</button>
+ <p class="mute" style="margin-top:24px">LUMIÈRE · version de démonstration · gratuite, sans publicité, sans compte.</p>`}
+function addJ(){const t=$('#jt').value.trim();if(!t)return;const j=L.get('journal',[]);j.push({d:new Date().toLocaleString('fr-FR'),t});L.set('journal',j);render()}
+function delJ(i){if(confirm('Supprimer cette entrée ?')){const j=L.get('journal',[]);j.splice(i,1);L.set('journal',j);render()}}
+function exportD(){const o={};['fav','notes','journal','prayers','days','last','seen'].forEach(k=>o[k]=L.get(k,null));const u=URL.createObjectURL(new Blob([JSON.stringify(o,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=u;a.download='lumiere-sauvegarde-'+today()+'.json';document.body.appendChild(a);a.click();a.remove()}
+render();
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script></body></html>
