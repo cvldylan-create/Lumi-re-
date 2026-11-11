@@ -1,0 +1,12 @@
+Sainte Bible néo-Crampon Libre
+Une modernisation de la traduction catholique française de Crampon.
+© 2022 Fraternité de Tibériade.
+Licence : Creative Commons Attribution - Partage dans les mêmes conditions 4.0 (CC BY-SA 4.0)
+https://creativecommons.org/licenses/by-sa/4.0/deed.fr
+Source : eBible.org (fichiers USFM du 10 novembre 2026).
+
+Modifications apportées par LUMIÈRE (fichier bible.json) : conversion du format USFM en JSON ;
+suppression des étiquettes de mots (numéros de Strong), des références croisées et de la mise en
+page des paragraphes et de la poésie ; conservation des titres de sections et des notes de bas de page.
+Ces modifications n'ont pas été validées par le titulaire des droits.
+Le fichier bible.json est redistribué sous la même licence CC BY-SA 4.0.

@@ -36,6 +36,7 @@ nav button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width
 nav button.on{color:var(--acc);font-weight:600}
 :focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 .pj{border-left:4px solid var(--acc)}.pj .tx{font:19px/1.7 var(--serif);white-space:pre-wrap;margin:8px 0}.pj .row2{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.hd{font:600 15px/1.4 var(--sans);color:var(--acc);margin:18px 8px 2px}.fn{font-size:13px;color:var(--mute);margin:0 8px 8px 30px;padding-left:8px;border-left:2px solid var(--soft)}details.card summary{cursor:pointer}details.card a{color:var(--acc)}.res{display:block;width:100%;text-align:left;background:none;color:var(--ink);border-bottom:1px solid var(--line);border-radius:0;padding:10px 4px}
 </style></head><body>
 <main id="app"></main>
 <nav id="nav"></nav>
@@ -43,9 +44,55 @@ nav button.on{color:var(--acc);font-weight:600}
 const AT=["Genèse","Exode","Lévitique","Nombres","Deutéronome","Josué","Juges","Ruth","1 Samuel","2 Samuel","1 Rois","2 Rois","1 Chroniques","2 Chroniques","Esdras","Néhémie","Tobie","Judith","Esther","1 Maccabées","2 Maccabées","Job","Psaumes","Proverbes","Qohélet","Cantique des Cantiques","Sagesse","Siracide","Isaïe","Jérémie","Lamentations","Baruch","Ézéchiel","Daniel","Osée","Joël","Amos","Abdias","Jonas","Michée","Nahum","Habacuc","Sophonie","Aggée","Zacharie","Malachie"];
 const NT=["Matthieu","Marc","Luc","Jean","Actes des Apôtres","Romains","1 Corinthiens","2 Corinthiens","Galates","Éphésiens","Philippiens","Colossiens","1 Thessaloniciens","2 Thessaloniciens","1 Timothée","2 Timothée","Tite","Philémon","Hébreux","Jacques","1 Pierre","2 Pierre","1 Jean","2 Jean","3 Jean","Jude","Apocalypse"];
 const BOOKS=[...AT,...NT];
-// DÉMO : 2 chapitres × 5 versets factices par livre. Remplacé par le vrai texte à l’étape 3.
-const DEMO_CH=2,DEMO_V=5;
-const demoVerse=(b,c,v)=>`[DÉMO] Emplacement du verset ${v} — ce n’est pas le texte biblique.`;
+const CODES=["GEN","EXO","LEV","NUM","DEU","JOS","JDG","RUT","1SA","2SA","1KI","2KI","1CH","2CH","EZR","NEH","TOB","JDT","EST","1MA","2MA","JOB","PSA","PRO","ECC","SNG","WIS","SIR","ISA","JER","LAM","BAR","EZK","DAN","HOS","JOL","AMO","OBA","JON","MIC","NAM","HAB","ZEP","HAG","ZEC","MAL","MAT","MRK","LUK","JHN","ACT","ROM","1CO","2CO","GAL","EPH","PHP","COL","1TH","2TH","1TI","2TI","TIT","PHM","HEB","JAS","1PE","2PE","1JN","2JN","3JN","JUD","REV"];
+// Texte biblique : fichier bible.json (néo-Crampon Libre). Format : {CODE:[[n°chapitre,[[n°verset,texte,titres?,notes?],...]],...]}
+let BIBLE=null,BLOAD=null,IDX=null;
+function loadBible(){if(BIBLE)return Promise.resolve(BIBLE);if(!BLOAD)BLOAD=fetch('bible.json').then(r=>{if(!r.ok)throw new Error('bible.json');return r.json()}).then(j=>{BIBLE=j;return j}).catch(e=>{BLOAD=null;throw e});return BLOAD}
+const bch=b=>BIBLE?BIBLE[CODES[b]]:null;
+const chap=(b,c)=>{const ch=bch(b);if(!ch)return null;return(ch[c-1]&&ch[c-1][0]===c)?ch[c-1]:(ch.find(x=>x[0]===c)||null)};
+function vget(b,c,v){const C=chap(b,c);return C?(C[1].find(x=>x[0]===v)||null):null}
+const vtext=k=>{const[b,c,v]=k.split('.').map(Number),r=vget(b,c,v);return r?r[1]:''};
+const vsnip=k=>{const t=vtext(k);return t.length>90?t.slice(0,90)+'…':t};
+// ==SEARCH-ENGINE-START==
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/œ/g,'oe').replace(/æ/g,'ae').replace(/[^a-z0-9]+/g,' ').trim();
+const STOP=new Set("comment pourquoi quoi que qui quel quelle quels quelles dit disent dire sur dans pour par avec sans les des une aux est sont etre fait faire peut puis cette cet ces mon ton son nos vos leur leurs elle elles ils nous vous mais donc car comme plus tout tous toute apprendre trouver retrouver permet permettre faut falloir avoir the".split(' '));
+const THEMES=[
+{n:'Souffrance et épreuve',t:['souffr','douleur','malheur','epreuv'],k:['souffr','epreuv','afflict','douleur','larmes'],w:['souffrance','épreuve','affliction','larmes']},
+{n:'Pardon et miséricorde',t:['pardon','reconcil','misericord'],k:['pardon','misericord','reconcil'],w:['pardon','miséricorde','réconciliation']},
+{n:'Prière',t:['prier','priere','prions','invoqu','supplic'],k:['prier','priere','prions','priez','invoqu','supplic'],w:['prière','invoquer','supplication']},
+{n:'Amour et charité',t:['amour','aim','charit'],k:['amour','aim','charite'],w:['amour','aimer','charité']},
+{n:'Espérance et confiance',t:['esper','confian','desespoir'],k:['esper','confian','courage'],w:['espérance','confiance','courage']},
+{n:'Famille',t:['famil','parent','enfant','epous','mari'],k:['famille','enfant','parents','epous'],w:['famille','enfants','parents','époux']},
+{n:'Paix',t:['paix','apais','serein'],k:['paix','repos','sereni'],w:['paix','repos']},
+{n:'Joie',t:['joie','joyeux','rejou','bonheur'],k:['joie','rejou','heureux'],w:['joie','réjouir','heureux']},
+{n:'Peur et crainte',t:['peur','crainte','angoiss','inquiet'],k:['peur','craign','crainte','angoiss'],w:['peur','crainte','angoisse']},
+{n:'Foi',t:['foi','croire','croit','croyan'],k:['foi','croir','croyan','croit'],w:['foi','croire']},
+{n:'Justice et pauvres',t:['pauvr','justice','opprim'],k:['pauvr','justice','opprim'],w:['pauvres','justice','opprimé']},
+{n:'Vie éternelle',t:['eternel','resurrect','mort'],k:['vie eternelle','resurrect','ressusc'],w:['vie éternelle','résurrection']},
+{n:'Sagesse et décision',t:['sagess','decision','decid','discern','choisir'],k:['sagesse','conseil','discern'],w:['sagesse','conseil','discernement']}];
+function buildIdx(){if(IDX||!BIBLE)return;IDX=[];let i=0;CODES.forEach((code,b)=>BIBLE[code].forEach(C=>C[1].forEach(r=>IDX.push({i:i++,b,c:C[0],v:r[0],t:r[1],n:norm(r[1])}))))}
+function runSearch(q){
+ buildIdx();const nq=norm(q);if(nq.length<2)return null;
+ const toks=nq.split(' ').filter(w=>w.length>1),question=toks.length>=3||/\?/.test(q);
+ let core=toks.filter(w=>!STOP.has(w)&&w.length>2);if(!core.length)core=toks;
+ const th=THEMES.filter(t=>core.some(w=>t.t.some(s=>w.startsWith(s))));
+ const stem=w=>w.length>=7?w.slice(0,-2):w.length>=5?w.slice(0,-1):w;
+ const terms=[...new Set(core.map(stem))],extra=[...new Set(th.flatMap(t=>t.k))].filter(x=>!terms.includes(x));
+ const all=[...terms,...extra],rs=all.map(s=>new RegExp('(^| )'+s)),df=new Array(all.length).fill(0),hits=[];
+ for(const e of IDX){const m=[];for(let j=0;j<rs.length;j++)if(rs[j].test(e.n)){m.push(j);df[j]++}if(m.length)hits.push([e,m])}
+ const res=[];
+ for(const[e,m]of hits){
+  if(!question){if(!terms.every((_,j)=>m.includes(j)))continue;res.push([10+(e.n.includes(nq)?5:0),e])}
+  else{let s=0;for(const j of m)s+=Math.log(IDX.length/df[j])*(j<terms.length?1:.8);if(m.length>1)s*=1+.15*m.length;if(terms.length>1&&terms.every((_,j)=>m.includes(j)))s*=1.8;if(e.n.includes(nq))s*=3;res.push([s,e])}}
+ res.sort((a,b)=>b[0]-a[0]||a[1].i-b[1].i);
+ return{res:res.map(x=>x[1]),th,question}}
+// ==SEARCH-ENGINE-END==
+const VJ=[["JHN",3,16],["PSA",23,1],["MAT",11,28],["JHN",14,27],["PHP",4,6],["ROM",8,28],["JOS",1,9],["ISA",41,10],["MAT",6,34],["1CO",13,4],["JER",29,11],["MAT",5,9],["LUK",6,36],["JHN",15,12],["1JN",4,8],["PRO",3,5],["MAT",7,7],["1TH",5,16],["COL",3,14],["EPH",4,32],["JAS",1,5],["HEB",11,1],["MAT",28,20],["PSA",27,1],["DEU",31,6],["LAM",3,22],["2TI",1,7]];
+function vjour(){
+ if(!BIBLE){loadBible().then(()=>{if(S.tab==='home')render()}).catch(()=>{});return`<div class="card"><h2 style="margin-top:0">Un verset à méditer</h2><p class="mute">Chargement du texte biblique…</p></div>`}
+ const d=new Date(),n=Math.round(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5),[cd,c,v]=VJ[n%VJ.length],b=CODES.indexOf(cd),k=id(b,c,v);
+ return`<div class="card"><h2 style="margin-top:0">Un verset à méditer</h2><p style="font:19px/1.7 var(--serif);margin:6px 0">${esc(vtext(k))}</p><p class="mute" style="margin:0 0 10px">${esc(ref(k))}</p><button class="ghost" onclick="openV(${b},${c},${v})">Lire dans son contexte</button></div>`}
+const credit=()=>`<details class="card"><summary><b>Crédits et licence</b></summary><p class="mute">Texte biblique : Sainte Bible néo-Crampon Libre, une modernisation de la traduction catholique française de Crampon. © 2022 Fraternité de Tibériade. Licence Creative Commons Attribution – Partage dans les mêmes conditions 4.0 (CC BY-SA 4.0).</p><p class="mute">Source : eBible.org, fichiers USFM du 10 novembre 2026.</p><p class="mute">Modifications apportées par LUMIÈRE : conversion au format JSON pour la lecture hors connexion ; suppression des étiquettes de mots (numéros de Strong), des références croisées et de la mise en page des paragraphes et de la poésie ; conservation des titres de sections et des notes. Ces modifications n’ont pas été validées par le titulaire des droits.</p><p class="mute">Le texte biblique de LUMIÈRE est redistribué sous la même licence CC BY-SA 4.0 : <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr" target="_blank" rel="noopener">texte de la licence</a>.</p></details>`;
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const L={get:(k,d)=>{try{return JSON.parse(localStorage.getItem('lum_'+k))??d}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem('lum_'+k,JSON.stringify(v))}catch(e){alert('Stockage impossible sur cet appareil.')}}};
 const id=(b,c,v)=>`${b}.${c}.${v}`,ref=i=>{const[b,c,v]=i.split('.');return`${BOOKS[b]} ${c},${v}`};
@@ -54,44 +101,58 @@ const S={tab:'home',book:null,ch:1,sel:null,sp:'fav',q:'',cat:0};
 const ICON={home:'<path d="M3 11l9-8 9 8M5 10v10h14V10"/>',bible:'<path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3zM9 8h6"/>',search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',pray:'<path d="M12 3c2 3 5 4 5 8a5 5 0 01-10 0c0-4 3-5 5-8zM12 16v5"/>',me:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>'};
 const TABS=[['home','Accueil'],['bible','Bible'],['search','Recherche'],['pray','Prières'],['me','Mon espace']];
 const CATS=["Prière du matin","Prière du soir","Prière pour sa famille","Prière pour son enfant","Prière dans les difficultés","Prière pour demander pardon","Prière de gratitude","Prière pour retrouver la paix","Prière pour les personnes malades","Prière avant de prendre une décision"];
-const DEMO='<div class="demo"><b>Mode démonstration.</b> Les textes bibliques affichés sont des emplacements factices, pas la vraie Bible. Le texte authentique sera intégré à l’étape 3.</div>';
+const DEMO='';
 function markRead(){const r=L.get('days',[]);if(!r.includes(today())){r.push(today());L.set('days',r)}}
 function go(t){S.tab=t;S.sel=null;render()}
 function render(){
  $('#nav').innerHTML=TABS.map(([k,n])=>`<button class="${S.tab===k?'on':''}" onclick="go('${k}')" aria-label="${n}"><svg viewBox="0 0 24 24">${ICON[k==='me'?'me':k]}</svg>${n}</button>`).join('');
- $('#app').innerHTML=({home,bible,search,pray,me})[S.tab]();$('#app').scrollTop=0}
+ $('#app').innerHTML=({home,bible,search,pray,me})[S.tab]();$('#app').scrollTop=0;if(S.tab==='me')offStatus()}
+function offStatus(){if(!window.caches)return;caches.match('bible.json').then(r=>{const e=$('#off');if(e)e.textContent=r?'✓ Texte biblique disponible hors connexion.':'Texte biblique pas encore en cache : ouvrez l’appli une fois en ligne.'}).catch(()=>{})}
 function home(){
  const d=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),seen=Object.keys(L.get('seen',{})).length,last=L.get('last',null);
  return`<h1>Bienvenue sur LUMIÈRE</h1><p class="mute">${d}</p>${DEMO}
  <div class="card"><h2 style="margin-top:0">Évangile du jour</h2><p class="mute">Rubrique à venir (étape 8) : référence, texte intégral et espace pour vos notes. Aucune lecture n’est affichée tant que le calendrier liturgique n’est pas intégré et vérifié.</p></div>
- <div class="card"><h2 style="margin-top:0">Un verset à méditer</h2><p class="mute">Disponible dès que le vrai texte biblique sera intégré.</p></div>
+ ${vjour()}
  <h2>Accès rapides</h2><div class="grid">
  <button onclick="${last?`openCh(${last.b},${last.c})`:`go('bible')`}">${last?'Reprendre ma lecture':'Ouvrir la Bible'}</button>
  <button class="ghost" onclick="go('search')">Rechercher</button><button class="ghost" onclick="go('pray')">Prières</button><button class="ghost" onclick="go('me')">Mon espace</button></div>
- <h2>Ma progression</h2><div class="card"><div class="bar"><i style="width:${Math.min(100,seen)}%"></i></div><p class="mute" style="margin-bottom:0">${seen} chapitre(s) ouvert(s) (démo)</p></div>`}
+ <h2>Ma progression</h2><div class="card"><div class="bar"><i style="width:${Math.min(100,Math.round(seen/13.34))}%"></i></div><p class="mute" style="margin-bottom:0">${seen} chapitre(s) ouvert(s) sur 1334</p></div>`}
 function bible(){
- if(S.book===null)return`<h1>La Bible</h1>${DEMO}<h2>Ancien Testament (46)</h2><div class="list">${AT.map((n,i)=>`<button class="row" onclick="openCh(${i},1)">${esc(n)}</button>`).join('')}</div><h2>Nouveau Testament (27)</h2><div class="list">${NT.map((n,i)=>`<button class="row" onclick="openCh(${i+46},1)">${esc(n)}</button>`).join('')}</div>
- <p class="mute">Texte prévu : Sainte Bible néo-Crampon Libre, licence CC BY-SA 4.0. Crédits complets à afficher lors de l’intégration.</p>`;
- const b=S.book,c=S.ch,fav=L.get('fav',[]),notes=L.get('notes',{});
- let v='';for(let i=1;i<=DEMO_V;i++){const k=id(b,c,i);v+=`<div class="verse ${S.sel===k?'sel':''}" onclick="selV('${k}')"><sup>${i}</sup>${demoVerse(b,c,i)} ${fav.includes(k)?'<span class="st">★</span>':''}${notes[k]?'<span class="st"> ✎</span>':''}</div>`}
- return`<button class="ghost" onclick="S.book=null;render()">‹ Livres</button><h1>${esc(BOOKS[b])} ${c}</h1>${DEMO}
- <div class="chips">${Array.from({length:DEMO_CH},(_,i)=>`<button class="${i+1===c?'on':''}" onclick="openCh(${b},${i+1})">${i+1}</button>`).join('')}</div>${v}
+ if(S.book===null)return`<h1>La Bible</h1><h2>Ancien Testament (46)</h2><div class="list">${AT.map((n,i)=>`<button class="row" onclick="openCh(${i},1)">${esc(n)}</button>`).join('')}</div><h2>Nouveau Testament (27)</h2><div class="list">${NT.map((n,i)=>`<button class="row" onclick="openCh(${i+46},1)">${esc(n)}</button>`).join('')}</div>${credit()}`;
+ if(!BIBLE){if(!S.err)loadBible().then(render).catch(()=>{S.err=1;render()});return S.err?`<button class="ghost" onclick="S.book=null;S.err=0;render()">‹ Livres</button><div class="demo">Le texte biblique n’a pas pu être chargé. Vérifiez que le fichier bible.json est bien présent à côté de index.html, puis rechargez l’application.</div>`:'<p class="mute">Chargement du texte biblique…</p>'}
+ const b=S.book,c=S.ch,ch=bch(b),C=chap(b,c),fav=L.get('fav',[]),notes=L.get('notes',{});
+ if(!C){S.book=null;return bible()}
+ let v='';for(const r of C[1]){const k=id(b,c,r[0]),fn=r[3]||[];
+  v+=`${(r[2]||[]).map(h=>`<p class="hd">${esc(h)}</p>`).join('')}<div class="verse ${S.sel===k?'sel':''}" id="v${r[0]}" onclick="selV('${k}')"><sup>${r[0]}</sup>${esc(r[1])} ${fav.includes(k)?'<span class="st">★</span>':''}${notes[k]?'<span class="st"> ✎</span>':''}${fn.length?'<span class="st"> ⓘ</span>':''}</div>${S.sel===k&&fn.length?`<div class="fn">${fn.map(esc).join('<br>')}</div>`:''}`}
+ const hasP=c>1||b>0,hasN=c<ch.length||b<72;
+ return`<button class="ghost" onclick="S.book=null;render()">‹ Livres</button><h1>${esc(BOOKS[b])} ${c}</h1>
+ <div class="chips">${ch.map(x=>`<button class="${x[0]===c?'on':''}" onclick="openCh(${b},${x[0]})">${x[0]}</button>`).join('')}</div>${v}
  <div class="sheet">${S.sel?`<span class="mute" style="width:100%">${esc(ref(S.sel))}</span><button onclick="togFav()">${fav.includes(S.sel)?'Retirer des favoris':'Favori'}</button><button class="ghost" onclick="copyV()">Copier</button><button class="ghost" onclick="shareV()">Partager</button><button class="ghost" onclick="noteV()">Note</button>`:'<span class="mute">Touchez un verset pour agir dessus.</span>'}</div>
- <div class="sheet" style="border:0"><button class="ghost" ${c>1?'':'disabled'} onclick="openCh(${b},${c-1})">‹ Précédent</button><button class="ghost" ${c<DEMO_CH?'':'disabled'} onclick="openCh(${b},${c+1})">Suivant ›</button></div>`}
-function openCh(b,c){S.tab='bible';S.book=b;S.ch=c;S.sel=null;L.set('last',{b,c});const s=L.get('seen',{});s[b+'.'+c]=1;L.set('seen',s);markRead();render()}
+ <div class="sheet" style="border:0"><button class="ghost" ${hasP?'':'disabled'} onclick="${c>1?`openCh(${b},${c-1})`:`openCh(${b-1},${b>0?bch(b-1).length:1})`}">‹ Précédent</button><button class="ghost" ${hasN?'':'disabled'} onclick="${c<ch.length?`openCh(${b},${c+1})`:`openCh(${b+1},1)`}">Suivant ›</button></div>${credit()}`}
+function openV(b,c,v){openCh(b,c);S.sel=id(b,c,v);render();setTimeout(()=>{const e=document.getElementById('v'+v);if(e)e.scrollIntoView({block:'center'})},60)}
+function openCh(b,c){S.err=0;S.tab='bible';S.book=b;S.ch=c;S.sel=null;L.set('last',{b,c});const s=L.get('seen',{});s[b+'.'+c]=1;L.set('seen',s);markRead();render()}
 function selV(k){S.sel=S.sel===k?null:k;const y=$('#app').scrollTop;render();$('#app').scrollTop=y}
 function togFav(){let f=L.get('fav',[]);f=f.includes(S.sel)?f.filter(x=>x!==S.sel):[...f,S.sel];L.set('fav',f);selV(S.sel);selV(S.sel)}
-function vtxt(k){const[b,c,v]=k.split('.');return`${demoVerse(b,c,v)} (${ref(k)})`}
+function vtxt(k){const t=vtext(k);return t?`« ${t} » — ${ref(k)} (néo-Crampon Libre, CC BY-SA 4.0)`:ref(k)}
 function copyV(){navigator.clipboard?.writeText(vtxt(S.sel)).then(()=>alert('Verset copié.'),()=>alert('Copie impossible.'))}
 function shareV(){navigator.share?navigator.share({text:vtxt(S.sel)}).catch(()=>{}):copyV()}
 function noteV(){const n=L.get('notes',{}),t=prompt('Votre note pour '+ref(S.sel),n[S.sel]||'');if(t!==null){if(t.trim())n[S.sel]=t.trim();else delete n[S.sel];L.set('notes',n);selV(S.sel);selV(S.sel)}}
 function search(){
- const q=S.q.trim().toLowerCase();let out='';
- if(q.length>1){const bk=BOOKS.map((n,i)=>[n,i]).filter(([n])=>n.toLowerCase().includes(q));
-  out=bk.length?`<h2>Livres</h2><div class="list">${bk.map(([n,i])=>`<button class="row" onclick="openCh(${i},1)">${esc(n)}</button>`).join('')}</div>`:'';
-  out+=`<div class="card"><b>Recherche thématique</b><p class="mute" style="margin-bottom:0">Les passages liés à votre question (références exactes, textes, thèmes proches) arriveront à l’étape 5, à partir du texte biblique réel. Aucun résultat n’est inventé en attendant.</p></div>`}
- return`<h1>Recherche</h1>${DEMO}<input id="q" type="search" placeholder="Un mot, un livre ou une question…" value="${esc(S.q)}" oninput="S.q=this.value;clearTimeout(window.t);window.t=setTimeout(()=>{render();const e=$('#q');e.focus();e.setSelectionRange(99,99)},350)">${out}
- <h2>Exemples de questions prévues</h2><p class="mute">Comment apprendre à pardonner ? · Comment prier ? · Que dit Jésus sur l’amour ? · Comment retrouver l’espérance ?</p>`}
+ const q=S.q.trim(),lim=S.lim||30;let out='';
+ if(q.length>1){
+  if(!BIBLE){loadBible().then(()=>{if(S.tab==='search')render()}).catch(()=>{});out='<p class="mute">Chargement du texte biblique…</p>'}
+  else{
+   const nq=norm(q),bk=BOOKS.map((n,i)=>[n,i]).filter(([n])=>norm(n).includes(nq)),R=runSearch(q);
+   out=bk.length?`<h2>Livres</h2><div class="list">${bk.map(([n,i])=>`<button class="row" onclick="openCh(${i},1)">${esc(n)}</button>`).join('')}</div>`:'';
+   if(R){
+    if(R.th.length)out+=`<h2>Thèmes associés</h2><div class="chips">${R.th.flatMap(t=>t.w).map(w=>`<button class="ghost" onclick="S.q='${w.replace(/'/g,'’')}';S.lim=30;render()">${esc(w)}</button>`).join('')}</div>`;
+    out+=`<h2>${R.res.length} passage(s)</h2>${R.question?'<p class="mute">Passages choisis d’après les mots de votre question dans le texte biblique. Chaque verset est cité tel qu’il est écrit.</p>':''}`;
+    out+=R.res.slice(0,lim).map(e=>`<button class="res" onclick="openV(${e.b},${e.c},${e.v})"><b>${esc(BOOKS[e.b])} ${e.c},${e.v}</b><br><span style="font-family:var(--serif)">${esc(e.t.length>240?e.t.slice(0,240)+'…':e.t)}</span></button>`).join('');
+    if(R.res.length>lim)out+=`<button class="ghost" style="margin-top:10px" onclick="S.lim=${lim+30};render()">Afficher plus</button>`;
+    if(!R.res.length)out+='<p class="mute">Aucun passage trouvé. Essayez un autre mot ou une formulation plus simple.</p>'}}}
+ const ex=["Comment apprendre à pardonner ?","Comment prier ?","Que dit Jésus sur l’amour ?","Comment retrouver l’espérance ?","Pourquoi Dieu permet-il la souffrance ?","Que dit la Bible sur la famille ?"];
+ return`<h1>Recherche</h1><input id="q" type="search" placeholder="Un mot, un livre ou une question…" value="${esc(S.q)}" oninput="S.q=this.value;S.lim=30;clearTimeout(window.t);window.t=setTimeout(()=>{render();const e=$('#q');e.focus();e.setSelectionRange(99,99)},350)">${out}
+ ${q.length>1?'':`<h2>Exemples de questions</h2><div class="list">${ex.map(x=>`<button class="row" onclick="S.q='${x.replace(/'/g,'’')}';render()">${esc(x)}</button>`).join('')}</div>`}`}
 function pray(){
  const mine=L.get('prayers',[]);
  return`<h1>Prières</h1>${pjour()}<div class="demo"><b>Bibliothèque à venir (étape 6).</b> Les prières traditionnelles et originales seront ajoutées avec leur source. Vous pouvez déjà écrire les vôtres.</div>
@@ -153,14 +214,15 @@ function delP(i){if(confirm('Supprimer cette prière ?')){const p=L.get('prayers
 function me(){
  const sub=[['fav','Favoris'],['notes','Notes'],['jour','Journal'],['prog','Progression']];
  let b='';
- if(S.sp==='fav'){const f=L.get('fav',[]);b=f.length?`<div class="list">${f.map(k=>{const[x,c]=k.split('.');return`<button class="row" onclick="openCh(${x},${c})"><b>${esc(ref(k))}</b><br><span class="mute">${esc(demoVerse(...k.split('.')))}</span></button>`}).join('')}</div>`:'<p class="mute">Aucun favori. Dans la Bible, touchez un verset puis « Favori ».</p>'}
+ if(S.sp==='fav'&&!BIBLE)loadBible().then(()=>{if(S.tab==='me')render()}).catch(()=>{});
+ if(S.sp==='fav'){const f=L.get('fav',[]);b=f.length?`<div class="list">${f.map(k=>{const[x,c]=k.split('.');return`<button class="row" onclick="openCh(${x},${c})"><b>${esc(ref(k))}</b><br><span class="mute">${esc(vsnip(k))}</span></button>`}).join('')}</div>`:'<p class="mute">Aucun favori. Dans la Bible, touchez un verset puis « Favori ».</p>'}
  if(S.sp==='notes'){const n=Object.entries(L.get('notes',{}));b=n.length?n.map(([k,t])=>`<div class="card"><b>${esc(ref(k))}</b><p style="white-space:pre-wrap;margin:4px 0 0">${esc(t)}</p></div>`).join(''):'<p class="mute">Aucune note. Dans la Bible, touchez un verset puis « Note ».</p>'}
  if(S.sp==='jour'){const j=L.get('journal',[]);b=`<div class="card"><textarea id="jt" placeholder="Ce que cette journée m’inspire…"></textarea><button style="margin-top:8px" onclick="addJ()">Ajouter au journal</button></div>`+[...j].reverse().map((e,i)=>`<div class="card"><span class="mute">${esc(e.d)}</span><p style="white-space:pre-wrap;margin:4px 0 8px">${esc(e.t)}</p><button class="ghost" onclick="delJ(${j.length-1-i})">Supprimer</button></div>`).join('')}
  if(S.sp==='prog'){const d=L.get('days',[]),dots=[];for(let i=13;i>=0;i--){const x=new Date();x.setDate(x.getDate()-i);dots.push(d.includes(x.toISOString().slice(0,10)))}
   b=`<div class="card"><b>14 derniers jours</b><div class="dots" style="margin-top:8px">${dots.map(o=>`<i class="${o?'on':''}"></i>`).join('')}</div><p class="mute" style="margin-bottom:0">${d.length} jour(s) de lecture au total</p></div><p class="mute">Objectifs de lecture : à venir (étape 7).</p>`}
  return`<h1>Mon espace</h1><div class="chips">${sub.map(([k,n])=>`<button class="${S.sp===k?'on':''}" onclick="S.sp='${k}';render()">${n}</button>`).join('')}</div><div style="margin-top:12px">${b}</div>
  <h2>Sauvegarde</h2><p class="mute">Tout reste sur votre iPhone. Exportez régulièrement vos données.</p><button class="ghost" onclick="exportD()">Exporter mes données</button>
- <p class="mute" style="margin-top:24px">LUMIÈRE · version de démonstration · gratuite, sans publicité, sans compte.</p>`}
+ <p class="mute" id="off" style="margin-top:20px"></p>${credit()}<p class="mute">LUMIÈRE · gratuite, sans publicité, sans compte.</p>`}
 function addJ(){const t=$('#jt').value.trim();if(!t)return;const j=L.get('journal',[]);j.push({d:new Date().toLocaleString('fr-FR'),t});L.set('journal',j);render()}
 function delJ(i){if(confirm('Supprimer cette entrée ?')){const j=L.get('journal',[]);j.splice(i,1);L.set('journal',j);render()}}
 function exportD(){const o={};['fav','notes','journal','prayers','days','last','seen','pjfav','pjlog'].forEach(k=>o[k]=L.get(k,null));const u=URL.createObjectURL(new Blob([JSON.stringify(o,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=u;a.download='lumiere-sauvegarde-'+today()+'.json';document.body.appendChild(a);a.click();a.remove()}
