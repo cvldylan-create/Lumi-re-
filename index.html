@@ -35,6 +35,7 @@ nav button{flex:1;background:none;color:var(--mute);border-radius:0;padding:8px 
 nav button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 nav button.on{color:var(--acc);font-weight:600}
 :focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.pj{border-left:4px solid var(--acc)}.pj .tx{font:19px/1.7 var(--serif);white-space:pre-wrap;margin:8px 0}.pj .row2{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 </style></head><body>
 <main id="app"></main>
 <nav id="nav"></nav>
@@ -93,10 +94,60 @@ function search(){
  <h2>Exemples de questions prévues</h2><p class="mute">Comment apprendre à pardonner ? · Comment prier ? · Que dit Jésus sur l’amour ? · Comment retrouver l’espérance ?</p>`}
 function pray(){
  const mine=L.get('prayers',[]);
- return`<h1>Prières</h1><div class="demo"><b>Bibliothèque à venir (étape 6).</b> Les prières traditionnelles et originales seront ajoutées avec leur source. Vous pouvez déjà écrire les vôtres.</div>
+ return`<h1>Prières</h1>${pjour()}<div class="demo"><b>Bibliothèque à venir (étape 6).</b> Les prières traditionnelles et originales seront ajoutées avec leur source. Vous pouvez déjà écrire les vôtres.</div>
  <div class="chips">${CATS.map((c,i)=>`<button class="${S.cat===i?'on':''}" onclick="S.cat=${i};render()">${c.replace('Prière ','')}</button>`).join('')}</div>
  <h2>${CATS[S.cat]}</h2>${mine.map((p,i)=>p.c===S.cat?`<div class="card"><b>${esc(p.t)}</b><p style="white-space:pre-wrap">${esc(p.x)}</p><button class="ghost" onclick="delP(${i})">Supprimer</button></div>`:'').join('')||'<p class="mute">Aucune prière dans cette catégorie pour l’instant.</p>'}
  <div class="card"><b>Ajouter ma prière</b><input id="pt" placeholder="Titre" style="margin:8px 0"><textarea id="px" placeholder="Mon texte…"></textarea><button style="margin-top:8px" onclick="addP()">Enregistrer</button></div>`}
+
+// ===== LA PRIÈRE DU JOUR : 27 textes originaux LUMIÈRE (9 thèmes × 3). Ce ne sont pas des citations bibliques. =====
+const PJT=["Famille","Enfant","Protection","Gratitude","Pardon","Paix","Santé","Difficultés","Confiance en Dieu"];
+const PJ=[
+["Seigneur, bénis notre famille. Apprends-nous à nous écouter, à nous pardonner et à nous encourager. Que notre maison soit un lieu où chacun se sente accueilli, comme dans la famille de Nazareth. Amen.","La Sainte Famille de Nazareth (Luc 2)"],
+["Père, merci pour ceux qui partagent mon quotidien. Donne-nous la patience dans les jours de fatigue et la joie dans les petites choses. Garde-nous unis, même quand tout semble nous éloigner. Amen.","Thème de la famille unie"],
+["Seigneur Jésus, tu as connu la vie d’une famille. Veille sur chacun des miens, ceux qui sont proches et ceux qui sont loin. Dépose en nous la tendresse et la fidélité. Amen.","Jésus grandit à Nazareth (Luc 2)"],
+["Seigneur, je te confie mon enfant. Protège ses pas, éclaire son intelligence et garde son cœur simple. Aide-moi à l’aimer avec patience et à lui montrer le chemin par mon exemple. Amen.","Jésus accueille les enfants (Marc 10)"],
+["Marie, Mère de tous, je remets entre tes mains les enfants que j’aime. Couvre-les de ta tendresse et conduis-les vers ton Fils. Amen.","Marie, mère de Jésus : tradition de l’Église"],
+["Dieu notre Père, merci pour le sourire de cet enfant. Donne-lui la santé, la joie de grandir et le goût du bien. Donne-moi la sagesse pour l’accompagner chaque jour. Amen.","Thème de l’enfant reçu comme un don"],
+["Seigneur, au début de cette journée, je me place sous ta garde. Protège ceux que j’aime et ceux que je croise. Garde-nous du mal et de la peur, et fais de nous des artisans de paix. Amen.","Thème de Dieu qui protège (Psaume 91)"],
+["Ange gardien, compagnon de mon chemin, veille sur moi aujourd’hui. Éclaire mes décisions, éloigne le danger et rappelle-moi que je ne suis jamais seul. Amen.","Tradition catholique de l’ange gardien"],
+["Dieu tout-puissant, garde ma maison, mon travail et mes routes. Que ta présence nous soutienne dans tout ce que nous entreprenons. Amen.","Thème de la protection de Dieu"],
+["Merci, Seigneur, pour ce jour, pour le souffle de la vie et pour tout ce que je reçois sans toujours le voir. Apprends-moi à rendre grâce dans les joies comme dans les épreuves. Amen.","Les dix lépreux : un seul revient dire merci (Luc 17)"],
+["Père, je te remercie pour les visages qui m’entourent et pour les gestes de bonté de cette journée. Que ma reconnaissance se change en service. Amen.","Thème de l’action de grâce"],
+["Seigneur, pour le pain de chaque jour, pour le travail et le repos, pour la beauté de ta création : merci. Amen.","Thème de la louange pour la création (Psaumes)"],
+["Seigneur, je reconnais mes fautes et mes manques d’amour. Pardonne-moi, et donne-moi la force de recommencer. Aide-moi aussi à pardonner à ceux qui m’ont blessé, même si c’est difficile. Amen.","Le Père miséricordieux (Luc 15)"],
+["Jésus, toi qui as pardonné sans compter, ouvre mon cœur à la réconciliation. Aide-moi à faire le premier pas et à déposer la rancune. Amen.","Thème du pardon donné et reçu"],
+["Père de miséricorde, je te remets ce qui pèse sur ma conscience. Purifie-moi de mes torts et rends-moi la paix du cœur. Amen.","Thème de la miséricorde de Dieu"],
+["Seigneur, apaise mon esprit agité. Que ta paix descende sur mes pensées, sur mes relations et sur ce monde blessé. Fais de moi un artisan de paix. Amen.","La paix que Jésus laisse à ses disciples (Jean 14)"],
+["Esprit Saint, calme mes inquiétudes. Apprends-moi le silence et la confiance. Que je dépose mes soucis entre tes mains et que je respire en ta présence. Amen.","Thème de la paix intérieure"],
+["Marie, Reine de la paix, prie pour nous. Obtiens la réconciliation aux familles divisées et aux peuples en guerre. Amen.","Marie invoquée comme Reine de la paix : tradition de l’Église"],
+["Seigneur, je te prie pour les personnes malades. Soulage leurs douleurs, soutiens ceux qui les soignent et donne à chacun la force d’espérer. Amen.","La prière pour les malades dans l’Église (Jacques 5)"],
+["Jésus, médecin des corps et des cœurs, viens visiter celui ou celle qui souffre. Sois sa lumière dans la fatigue et ta présence dans la solitude. Amen.","Thème de Jésus auprès des malades"],
+["Père, merci pour la santé que tu me donnes. Aide-moi à en prendre soin et à ne pas oublier ceux qui sont éprouvés par la maladie. Amen.","Thème de la santé reçue comme un don"],
+["Seigneur, la route est dure aujourd’hui. Je ne vois pas la sortie, mais je viens à toi tel que je suis. Donne-moi le courage d’avancer un pas après l’autre. Amen.","Jésus apaise la tempête (Marc 4)"],
+["Dieu fidèle, quand les épreuves s’accumulent, ne me laisse pas seul. Envoie-moi des personnes qui m’aident et soutiens ma foi. Amen.","Thème de la fidélité de Dieu dans l’épreuve"],
+["Jésus, toi qui as connu l’angoisse, sois près de moi dans cette difficulté. Transforme ma peur en confiance. Amen.","Jésus à Gethsémani (Matthieu 26)"],
+["Seigneur, je ne sais pas de quoi demain sera fait, mais je sais que tu es là. J’abandonne entre tes mains mes projets et mes inquiétudes. Que ta volonté s’accomplisse. Amen.","Dieu notre berger (Psaume 23) ; ne pas s’inquiéter du lendemain (Matthieu 6)"],
+["Père, tu connais mes besoins avant que je les exprime. Fais grandir ma confiance, et que je marche sans crainte, sûr de ton amour. Amen.","Thème de la confiance en la Providence (Matthieu 6)"],
+["Jésus, j’ai confiance en toi. Quand je doute, fortifie ma foi. Quand j’avance dans la nuit, sois ma lumière. Amen.","Thème de la confiance en Dieu"]
+];
+const pjKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const pjLabel=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})};
+function pjIdx(k){const log=L.get('pjlog',{});if(log[k]!=null)return log[k];const[y,m,d]=k.split('-').map(Number),n=Math.round(Date.UTC(y,m-1,d)/864e5),p=((n%27)+27)%27;return(p%9)*3+Math.floor(p/9)}
+function pjText(i){return`Prière du jour — ${PJT[Math.floor(i/3)]}\n\n${PJ[i][0]}\n\n— LUMIÈRE (texte original, non extrait de la Bible)`}
+function pjour(){
+ const t=pjKey(new Date()),log=L.get('pjlog',{});if(log[t]==null){log[t]=pjIdx(t);L.set('pjlog',log)}
+ const fav=L.get('pjfav',[]),k=S.pjd||t,isF=k[0]==='f',i=isF?+k.slice(1):pjIdx(k),p=PJ[i];
+ const hist=[];for(let n=1;n<=14;n++){const d=new Date();d.setDate(d.getDate()-n);hist.push(pjKey(d))}
+ return`<div class="card pj"><h2 style="margin-top:0">La prière du jour</h2><p class="mute" style="margin:0">${isF?'Prière enregistrée':esc(pjLabel(k))} · ${PJT[Math.floor(i/3)]}</p>
+ <div class="tx">${esc(p[0])}</div><p class="mute" style="margin:0">Thème biblique d’inspiration : ${esc(p[1])}</p><p class="mute" style="margin:4px 0 0;font-size:12px">Texte original LUMIÈRE, ce n’est pas un extrait de la Bible.</p>
+ <div class="row2"><button onclick="pjFav(${i})">${fav.includes(i)?'Retirer des favoris':'Favori'}</button><button class="ghost" onclick="pjCopy(${i})">Copier</button><button class="ghost" onclick="pjShare(${i})">Partager</button>${S.pjd&&S.pjd!==t?`<button class="ghost" onclick="S.pjd=null;render()">Revenir à aujourd’hui</button>`:''}</div></div>
+ <button class="ghost" onclick="S.pjh=!S.pjh;render()" style="width:100%">${S.pjh?'Masquer les prières précédentes':'Prières des jours précédents'}</button>
+ ${S.pjh?`<div class="list">${hist.map(h=>`<button class="row" onclick="S.pjd='${h}';render()"><b>${esc(pjLabel(h))}</b><br><span class="mute">${PJT[Math.floor(pjIdx(h)/3)]}</span></button>`).join('')}</div>`:''}
+ ${fav.length?`<h2>Prières du jour en favori</h2><div class="list">${fav.map(f=>`<button class="row" onclick="S.pjd='f${f}';render()"><b>${PJT[Math.floor(f/3)]}</b><br><span class="mute">${esc(PJ[f][0].slice(0,60))}…</span></button>`).join('')}</div>`:''}
+ <h2>Mes catégories</h2>`}
+function pjFav(i){let f=L.get('pjfav',[]);f=f.includes(i)?f.filter(x=>x!==i):[...f,i];L.set('pjfav',f);render()}
+function pjCopy(i){navigator.clipboard?.writeText(pjText(i)).then(()=>alert('Prière copiée.'),()=>alert('Copie impossible.'))}
+function pjShare(i){navigator.share?navigator.share({text:pjText(i)}).catch(()=>{}):pjCopy(i)}
 function addP(){const t=$('#pt').value.trim(),x=$('#px').value.trim();if(!x)return alert('Écrivez le texte de votre prière.');const p=L.get('prayers',[]);p.push({c:S.cat,t:t||'Ma prière',x});L.set('prayers',p);render()}
 function delP(i){if(confirm('Supprimer cette prière ?')){const p=L.get('prayers',[]);p.splice(i,1);L.set('prayers',p);render()}}
 function me(){
@@ -112,7 +163,7 @@ function me(){
  <p class="mute" style="margin-top:24px">LUMIÈRE · version de démonstration · gratuite, sans publicité, sans compte.</p>`}
 function addJ(){const t=$('#jt').value.trim();if(!t)return;const j=L.get('journal',[]);j.push({d:new Date().toLocaleString('fr-FR'),t});L.set('journal',j);render()}
 function delJ(i){if(confirm('Supprimer cette entrée ?')){const j=L.get('journal',[]);j.splice(i,1);L.set('journal',j);render()}}
-function exportD(){const o={};['fav','notes','journal','prayers','days','last','seen'].forEach(k=>o[k]=L.get(k,null));const u=URL.createObjectURL(new Blob([JSON.stringify(o,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=u;a.download='lumiere-sauvegarde-'+today()+'.json';document.body.appendChild(a);a.click();a.remove()}
+function exportD(){const o={};['fav','notes','journal','prayers','days','last','seen','pjfav','pjlog'].forEach(k=>o[k]=L.get(k,null));const u=URL.createObjectURL(new Blob([JSON.stringify(o,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=u;a.download='lumiere-sauvegarde-'+today()+'.json';document.body.appendChild(a);a.click();a.remove()}
 render();
 if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script></body></html>
